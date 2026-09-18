@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NO PRESTES TU NOMBRE: El reto del Químico Farmacéutico</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f0fdfa; overflow-x: hidden; }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px) rotate(-2deg); }
+            75% { transform: translateX(5px) rotate(2deg); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pop {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes floatUpFade {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-50px) scale(1.2); }
+        }
+        
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        .animate-shake { animation: shake 0.4s ease-in-out; }
+        .animate-slide-up { animation: slideUp 0.6s ease-out forwards; }
+        .animate-pop { animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        
+        .floating-point {
+            position: fixed;
+            font-weight: 800;
+            font-size: 1.5rem;
+            pointer-events: none;
+            z-index: 100;
+            animation: floatUpFade 1.5s forwards;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        }
+
+        .progress-bar-fill {
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.5s ease;
+        }
+
+        .bg-pharmacy {
+            background-image: radial-gradient(circle at top right, #dcfce7, #f0fdfa);
+        }
+    </style>
+</head>
+<body class="bg-pharmacy text-slate-800 min-h-screen flex flex-col items-center">
+
+    <!-- HUD: Indicadores y Puntuación -->
+    <div id="hud" class="hidden w-full max-w-4xl px-4 py-3 sticky top-0 z-40">
+        <div class="glass-panel rounded-2xl p-4 flex flex-col md:flex-row gap-4 justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="text-3xl font-black text-teal-600">
+                    <span id="score-display">0</span> <span class="text-lg text-teal-800">PTS</span>
+                </div>
+            </div>
+            
+            <div class="flex-1 w-full grid grid-cols-3 gap-3 md:gap-6 text-xs md:text-sm font-semibold text-slate-600">
+                <!-- Ética -->
+                <div class="flex flex-col gap-1">
+                    <div class="flex justify-between items-center">
+                        <span class="flex items-center gap-1"><span class="text-lg">⚖️</span> <span class="hidden md:inline">Ética</span></span>
+                        <span id="val-ethics">50%</span>
+                    </div>
+                    <div class="w-full bg-slate-200 rounded-full h-2.5">
+                        <div id="bar-ethics" class="bg-blue-500 h-2.5 rounded-full progress-bar-fill" style="width: 50%"></div>
+                    </div>
+                </div>
+                <!-- Responsabilidad -->
+                <div class="flex flex-col gap-1">
+                    <div class="flex justify-between items-center">
+                        <span class="flex items-center gap-1"><span class="text-lg">🛡️</span> <span class="hidden md:inline">Responsabilidad</span></span>
+                        <span id="val-resp">50%</span>
+                    </div>
+                    <div class="w-full bg-slate-200 rounded-full h-2.5">
+                        <div id="bar-resp" class="bg-indigo-500 h-2.5 rounded-full progress-bar-fill" style="width: 50%"></div>
+                    </div>
+                </div>
+                <!-- Seguridad -->
+                <div class="flex flex-col gap-1">
+                    <div class="flex justify-between items-center">
+                        <span class="flex items-center gap-1"><span class="text-lg">❤️</span> <span class="hidden md:inline">Seguridad Paciente</span></span>
+                        <span id="val-safety">50%</span>
+                    </div>
+                    <div class="w-full bg-slate-200 rounded-full h-2.5">
+                        <div id="bar-safety" class="bg-rose-500 h-2.5 rounded-full progress-bar-fill" style="width: 50%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex justify-center mt-3 gap-2" id="level-dots"></div>
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <main class="w-full max-w-4xl p-4 flex-1 flex flex-col justify-center items-center relative">
+        
+        <!-- PANTALLA INICIAL -->
+        <div id="screen-start" class="w-full flex flex-col items-center text-center animate-slide-up">
+            <div class="text-7xl mb-4 animate-float">🧑‍🔬🏥</div>
+            <h1 class="text-4xl md:text-6xl font-black text-slate-800 tracking-tight leading-tight mb-2">
+                NO PRESTES <br/><span class="text-teal-600">TU NOMBRE</span>
+            </h1>
+            <h2 class="text-xl md:text-2xl font-semibold text-slate-500 mb-8 uppercase tracking-wider">
+                El reto del Químico Farmacéutico
+            </h2>
+            
+            <div class="glass-panel p-8 rounded-3xl max-w-lg w-full mb-8 relative">
+                <div class="absolute -top-5 -right-5 text-4xl animate-bounce">💊</div>
+                <p class="text-xl font-medium text-slate-700 mb-6 italic">
+                    "¿Y tú... prestarías tu nombre?"
+                </p>
+                <button onclick="startGame()" class="group relative w-full flex justify-center py-4 px-8 border border-transparent text-xl font-black rounded-xl text-white bg-teal-600 hover:bg-teal-500 focus:outline-none focus:ring-4 focus:ring-teal-300 transition-all transform hover:scale-105 shadow-lg">
+                    <span class="mr-2">ACEPTO EL RETO</span>
+                    <span class="group-hover:translate-x-1 transition-transform">➔</span>
+                </button>
+            </div>
+            <p class="text-sm text-slate-400 max-w-md">Una experiencia interactiva para fortalecer las decisiones éticas y profesionales en establecimientos farmacéuticos.</p>
+        </div>
+
+        <!-- PANTALLA DE JUEGO -->
+        <div id="screen-game" class="hidden w-full flex-col items-center animate-slide-up pb-20">
+            <div id="quote-container" class="bg-teal-100 text-teal-800 px-6 py-2 rounded-full font-medium text-sm md:text-base mb-6 animate-pulse text-center">
+                Tu título tiene valor. Protégelo.
+            </div>
+
+            <div class="w-full text-center mb-6">
+                <span id="level-badge" class="inline-block bg-slate-800 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest mb-2">
+                    NIVEL 1
+                </span>
+                <h3 id="level-title" class="text-3xl font-black text-slate-800">La Propuesta</h3>
+            </div>
+
+            <div class="glass-panel w-full p-6 md:p-8 rounded-3xl shadow-lg mb-8 border-l-8 border-l-teal-500 relative">
+                <div class="absolute -top-6 -left-4 text-5xl bg-white rounded-full p-1 shadow-md">📜</div>
+                <p id="level-story" class="text-lg text-slate-700 leading-relaxed font-medium ml-4 md:ml-6"></p>
+            </div>
+
+            <div id="options-container" class="w-full flex flex-col gap-4"></div>
+        </div>
+
+        <!-- MODAL DE FEEDBACK -->
+        <div id="modal-feedback" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <div class="bg-white rounded-3xl shadow-2xl max-w-xl w-full p-6 md:p-8 animate-pop flex flex-col items-center text-center">
+                <div id="feedback-icon" class="text-6xl mb-4">⚖️</div>
+                <h3 id="feedback-title" class="text-2xl font-black mb-2"></h3>
+                <div class="flex gap-4 my-4" id="feedback-stats"></div>
+                <p id="feedback-text" class="text-slate-600 text-lg mb-8 leading-relaxed"></p>
+                <button onclick="nextStep()" class="w-full py-4 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-700 transition-colors shadow-lg">
+                    ENTENDIDO ➔
+                </button>
+            </div>
+        </div>
+
+
+        <!-- MODAL DE VIDEO -->
+        <div id="modal-video" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-sm">
+            <div class="bg-white rounded-3xl shadow-2xl max-w-3xl w-full p-5 md:p-7 animate-pop flex flex-col items-center">
+                <div class="w-full flex items-center justify-between mb-4">
+                    <h3 id="video-title" class="text-xl md:text-2xl font-black text-slate-800">🎬 Video educativo</h3>
+                    <button onclick="cerrarVideo()" class="text-slate-500 hover:text-slate-900 text-2xl font-black px-2" aria-label="Cerrar video">✕</button>
+                </div>
+                <video id="level-video" class="w-full rounded-2xl bg-black max-h-[65vh]" controls playsinline>
+                    Tu navegador no admite la reproducción de video.
+                </video>
+                <button id="video-continue-btn" onclick="cerrarVideo()" class="hidden mt-5 w-full py-3 bg-teal-600 text-white font-black rounded-xl hover:bg-teal-500 transition-colors shadow-lg">
+                    CONTINUAR ➔
+                </button>
+                <p id="video-hint" class="mt-3 text-sm text-slate-500 text-center">
+                    Reproduce el video para continuar.
+                </p>
+            </div>
+        </div>
+
+        <!-- MODAL DE SORPRESA -->
+        <div id="modal-surprise" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-teal-900/80 backdrop-blur-md">
+            <div class="bg-gradient-to-br from-yellow-300 to-amber-500 rounded-3xl shadow-2xl max-w-md w-full p-8 animate-pop flex flex-col items-center text-center border-4 border-white">
+                <div class="text-6xl mb-4 animate-bounce">🚨</div>
+                <h3 class="text-2xl font-black text-white mb-2 uppercase tracking-wider drop-shadow-md">¡Evento Inesperado!</h3>
+                <h4 id="surprise-title" class="text-xl font-bold text-slate-800 mb-4"></h4>
+                <p id="surprise-text" class="text-slate-900 font-medium text-lg mb-6"></p>
+                <div class="flex gap-4 mb-6 justify-center w-full" id="surprise-stats"></div>
+                <button onclick="closeSurprise()" class="w-full py-3 bg-white text-amber-600 font-black rounded-xl hover:bg-slate-50 transition-colors shadow-lg">
+                    CONTINUAR
+                </button>
+            </div>
+        </div>
+
+        <!-- PANTALLA DE RESULTADOS -->
+        <div id="screen-results" class="hidden w-full flex-col items-center animate-slide-up pb-10">
+            <div id="result-icon" class="text-8xl mb-2 animate-pop">🏆</div>
+            <h2 id="result-classification" class="text-3xl md:text-5xl font-black text-center mb-2 text-slate-800"></h2>
+            
+            <div class="flex items-center gap-2 mb-8">
+                <span class="text-slate-500 font-bold uppercase tracking-widest">Puntaje Final:</span>
+                <span id="result-score" class="text-4xl font-black text-teal-600">0/100</span>
+            </div>
+
+            <div class="w-full grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <div class="glass-panel p-5 rounded-2xl flex flex-col items-center text-center shadow-sm">
+                    <span class="text-3xl mb-2">🏥</span>
+                    <h4 class="font-bold text-slate-700 text-sm uppercase mb-1">Establecimiento</h4>
+                    <p id="res-est" class="text-sm font-medium text-slate-500"></p>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl flex flex-col items-center text-center shadow-sm">
+                    <span class="text-3xl mb-2">❤️</span>
+                    <h4 class="font-bold text-slate-700 text-sm uppercase mb-1">Pacientes</h4>
+                    <p id="res-pac" class="text-sm font-medium text-slate-500"></p>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl flex flex-col items-center text-center shadow-sm">
+                    <span class="text-3xl mb-2">🧑‍🔬</span>
+                    <h4 class="font-bold text-slate-700 text-sm uppercase mb-1">Tu Reputación</h4>
+                    <p id="res-prof" class="text-sm font-medium text-slate-500"></p>
+                </div>
+            </div>
+
+            <div class="bg-slate-800 text-white rounded-3xl p-8 w-full text-center shadow-xl mb-8">
+                <h3 class="text-2xl font-black mb-3">¿Y TÚ PRESTARÍAS TU NOMBRE?</h3>
+                <p class="text-teal-300 font-medium text-lg italic">Tu profesión. Tu responsabilidad.</p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 w-full max-w-md">
+                <button onclick="resetGame()" class="flex-1 py-4 bg-teal-600 text-white font-black rounded-xl hover:bg-teal-500 transition-colors shadow-lg flex items-center justify-center gap-2">
+                    <span>🔄</span> VOLVER A JUGAR
+                </button>
+                <button onclick="shareScore()" class="flex-1 py-4 bg-white text-slate-800 border-2 border-slate-200 font-black rounded-xl hover:bg-slate-50 transition-colors shadow-sm flex items-center justify-center gap-2">
+                    <span>📤</span> COMPARTIR
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50 hidden"></canvas>
+
+    <script>
+        const frasesMotivadoras = [
+            "Tu título tiene valor. Protégelo.",
+            "Tu presencia profesional protege vidas.",
+            "Cada decisión construye tu reputación profesional.",
+            "La ética no se alquila.",
+            "Tu firma representa responsabilidad.",
+            "No prestes tu nombre: ejerce tu profesión."
+        ];
+
+        const niveles = [
+            {
+                titulo: "La propuesta",
+                historia: "Un conocido te ofrece S/ 800 mensuales solo por firmar los documentos de apertura de una botica. Te asegura que 'él se encargará de todo' y solo necesitas ir una vez al mes para 'firmar los libros'.",
+                opciones: [
+                    {
+                        texto: "Aceptar. El dinero extra viene bien, es un amigo de confianza y necesito los ingresos.",
+                        pts: -10, etica: -15, resp: -20, seg: -5,
+                        feedback: "Alquilar tu título (plaqueo) es ilegal y antiético. Si ocurre algún problema sanitario o legal, tú serás el único responsable ante la ley, no tu amigo.",
+                        tipo: "malo"
+                    },
+                    {
+                        texto: "Rechazar tajantemente y advertirle que esa práctica es ilegal y riesgosa.",
+                        pts: 20, etica: 20, resp: 15, seg: 10,
+                        feedback: "¡Excelente decisión! Proteger tu título es el primer paso. El 'plaqueo' devalúa la profesión, reduce los salarios del sector y pone en riesgo a la población.",
+                        tipo: "bueno"
+                    },
+                    {
+                        texto: "Negociar ir un par de horas a la semana para 'supervisar' a cambio de más dinero.",
+                        pts: -5, etica: -10, resp: -5, seg: 0,
+                        feedback: "Una dirección técnica requiere presencia efectiva durante el horario de atención declarado, no visitas esporádicas. Sigues incurriendo en una falta profesional.",
+                        tipo: "regular"
+                    }
+                ]
+            },
+            {
+                titulo: "La presión",
+                historia: "Trabajas formalmente en una botica, pero el dueño te exige ausentarte en las tardes porque 'no hay presupuesto' para pagarte la jornada completa. Sin embargo, la botica seguirá abierta operando bajo tu nombre en la Autorización Sanitaria.",
+                opciones: [
+                    {
+                        texto: "Aceptar para no perder el trabajo, pero dejar indicaciones estrictas al técnico.",
+                        pts: -15, etica: -10, resp: -15, seg: -20,
+                        feedback: "Delegar responsabilidades exclusivas del químico farmacéutico pone en riesgo la salud del paciente. Si ocurre un error fatal, la responsabilidad penal es tuya.",
+                        tipo: "malo"
+                    },
+                    {
+                        texto: "Quedarte en la botica por tu cuenta sin cobrar esas horas para no abandonar a los pacientes.",
+                        pts: 5, etica: 10, resp: -10, seg: 15,
+                        feedback: "Aunque proteges al paciente, estás permitiendo el abuso laboral. Un profesional debe valorar su tiempo y conocimientos.",
+                        tipo: "regular"
+                    },
+                    {
+                        texto: "Negarte firmemente. Si no pueden cubrir tus honorarios, renunciarás y reportarás tu cese de regencia.",
+                        pts: 20, etica: 20, resp: 20, seg: 15,
+                        feedback: "Actuaste con integridad. Trabajar bajo condiciones que te obligan a infringir la ley mancha tu trayectoria.",
+                        tipo: "bueno"
+                    }
+                ]
+            },
+            {
+                titulo: "Fiscalización inesperada",
+                historia: "En un establecimiento donde 'prestaste tu firma' (no asistes), llega una inspección inopinada de la Autoridad de Salud (DIRIS/DIGEMID). Encuentran medicamentos vencidos y te llaman de urgencia.",
+                opciones: [
+                    {
+                        texto: "Intentar culpar al dueño frente a los inspectores alegando que él hace las compras.",
+                        pts: -15, etica: -15, resp: -20, seg: 0,
+                        feedback: "Como Director Técnico, tú eres el garante de la calidad ante la Autoridad de Salud. Esa excusa no te salva de sanciones.",
+                        tipo: "malo"
+                    },
+                    {
+                        texto: "Asumir tu responsabilidad legal, proceder al cierre temporal y someterte a la investigación.",
+                        pts: 15, etica: 15, resp: 15, seg: 10,
+                        feedback: "Afrontar las consecuencias es lo correcto, pero esto demuestra por qué tu presencia constante era indispensable.",
+                        tipo: "bueno"
+                    },
+                    {
+                        texto: "Apagar el celular y evitar ir al establecimiento para no firmar ningún acta.",
+                        pts: -20, etica: -25, resp: -25, seg: -10,
+                        feedback: "La peor decisión. Abandonar el establecimiento agrava la infracción y asegura sanciones mucho más drásticas.",
+                        tipo: "malo"
+                    }
+                ]
+            },
+            {
+                titulo: "El paciente",
+                historia: "Un técnico dispensa erróneamente un medicamento a un menor mientras tú no estabas presente (aunque figurabas como regente). El menor sufre una reacción adversa grave.",
+                opciones: [
+                    {
+                        texto: "Darle la cara a los padres, pedir disculpas, asistir al menor y asumir las acciones legales.",
+                        pts: 20, etica: 15, resp: 20, seg: 25,
+                        feedback: "Priorizar la salud del afectado es la reacción ética correcta ante la crisis, asumiendo tu falta por no supervisar.",
+                        tipo: "bueno"
+                    },
+                    {
+                        texto: "Pedirle al dueño que ofrezca dinero a los padres para que no denuncien.",
+                        pts: -20, etica: -30, resp: -20, seg: -20,
+                        feedback: "Intentar encubrir una negligencia con sobornos destruye por completo tu moral y cometes un delito adicional.",
+                        tipo: "malo"
+                    },
+                    {
+                        texto: "Despedir al técnico inmediatamente frente a los padres para demostrar autoridad.",
+                        pts: -10, etica: -10, resp: -15, seg: 0,
+                        feedback: "El técnico erró, pero el responsable legal de supervisar eras tú. Evadir la culpa buscando un chivo expiatorio es poco profesional.",
+                        tipo: "regular"
+                    }
+                ]
+            },
+            {
+                titulo: "La receta faltante",
+                historia: "Un cliente habitual llega exigiendo que le vendas un antibiótico inyectable fuerte para su hijo con fiebre, pero no trae receta médica alegando que vive lejos.",
+                opciones: [
+                    {
+                        texto: "Venderle el antibiótico sin receta para no perder al cliente y ayudarlo en su urgencia.",
+                        pts: -15, etica: -20, resp: -15, seg: -25,
+                        feedback: "Los antibióticos requieren receta obligatoria. Dispensarlos sin ella fomenta la resistencia bacteriana y pone en riesgo al menor.",
+                        tipo: "malo"
+                    },
+                    {
+                        texto: "Rechazar la venta, explicar los riesgos del uso inadecuado y derivarlo a un centro de salud.",
+                        pts: 20, etica: 20, resp: 20, seg: 20,
+                        feedback: "¡Excelente! Demuestras tu rol como profesional de la salud y educador sanitario, priorizando la seguridad del paciente.",
+                        tipo: "bueno"
+                    },
+                    {
+                        texto: "Llamar al dueño de la botica para que él decida si se vende o no.",
+                        pts: -10, etica: -5, resp: -10, seg: -5,
+                        feedback: "El responsable técnico eres tú, no el propietario comercial. Delegar decisiones clínicas en el dueño es una falta a tu criterio.",
+                        tipo: "regular"
+                    }
+                ]
+            },
+            {
+                titulo: "La tentación del stock vencido",
+                historia: "Revisando el almacén descubres una caja entera de analgésicos que venció hace dos semanas. El dueño te propone retirarles el sticker de expiración para 'no perder la inversión'.",
+                opciones: [
+                    {
+                        texto: "Aceptar la propuesta del dueño para evitar pérdidas económicas.",
+                        pts: -20, etica: -25, resp: -25, seg: -30,
+                        feedback: "¡Peligro total! Comercializar medicamentos vencidos o adulterar fechas es un delito grave contra la salud pública.",
+                        tipo: "malo"
+                    },
+                    {
+                        texto: "Segregar inmediatamente los productos vencidos y gestionar su baja formal para destrucción.",
+                        pts: 20, etica: 25, resp: 25, seg: 25,
+                        feedback: "¡Excelente decisión! Los productos vencidos no se negocian. Cumplir con los procedimientos de baja protege la salud pública.",
+                        tipo: "bueno"
+                    },
+                    {
+                        texto: "Guardar los medicamentos vencidos en una caja aparte en el almacén y no decir nada.",
+                        pts: -10, etica: -10, resp: -15, seg: -10,
+                        feedback: "Inacción peligrosa. Mantener stock vencido sin reportar genera el riesgo latente de ser dispensados por error.",
+                        tipo: "regular"
+                    }
+                ]
+            }
+        ];
+
+        const tarjetasSorpresa = [
+            {
+                titulo: "Fiscalización Exitosa",
+                texto: "Llegó una inspección y como estabas presente ejerciendo tu labor, todo salió perfecto.",
+                pts: 5, etica: 5, resp: 10, seg: 5
+            },
+            {
+                titulo: "Reclamo Solucionado",
+                texto: "Un paciente tuvo dudas con su receta. Al estar presente, le diste atención farmacéutica oportuna y evitaste una RAM.",
+                pts: 5, etica: 0, resp: 5, seg: 15
+            }
+        ];
+
+
+        // Un video por cada respuesta correcta (NIVEL 1 → NIVEL 6).
+        // Coloca estos 6 archivos en la misma carpeta que este HTML.
+        const videosPorNivel = [
+            "video1.mp4",
+            "video2.mp4",
+            "video3.mp4",
+            "video4.mp4",
+            "video5.mp4",
+            "video6.mp4"
+        ];
+
+        let videoPendiente = false;
+
+        let estado = {
+            nivelActual: 0,
+            puntuacion: 0,
+            etica: 50,
+            responsabilidad: 50,
+            seguridad: 50,
+            maxPuntuacion: 100
+        };
+
+        const pantallas = {
+            inicio: document.getElementById('screen-start'),
+            juego: document.getElementById('screen-game'),
+            resultados: document.getElementById('screen-results')
+        };
+        const hud = document.getElementById('hud');
+        const modalFeedback = document.getElementById('modal-feedback');
+        const modalVideo = document.getElementById('modal-video');
+        const levelVideo = document.getElementById('level-video');
+        const videoContinueBtn = document.getElementById('video-continue-btn');
+        const videoTitle = document.getElementById('video-title');
+        const videoHint = document.getElementById('video-hint');
+        const modalSurprise = document.getElementById('modal-surprise');
+        
+        function actualizarBarras(animar = true) {
+            estado.etica = Math.max(0, Math.min(100, estado.etica));
+            estado.responsabilidad = Math.max(0, Math.min(100, estado.responsabilidad));
+            estado.seguridad = Math.max(0, Math.min(100, estado.seguridad));
+            
+            document.getElementById('bar-ethics').style.width = `${estado.etica}%`;
+            document.getElementById('val-ethics').textContent = `${estado.etica}%`;
+            document.getElementById('bar-resp').style.width = `${estado.responsabilidad}%`;
+            document.getElementById('val-resp').textContent = `${estado.responsabilidad}%`;
+            document.getElementById('bar-safety').style.width = `${estado.seguridad}%`;
+            document.getElementById('val-safety').textContent = `${estado.seguridad}%`;
+
+            const scoreDisplay = document.getElementById('score-display');
+            scoreDisplay.textContent = estado.puntuacion;
+            if(animar) {
+                scoreDisplay.classList.add('animate-pop');
+                setTimeout(() => scoreDisplay.classList.remove('animate-pop'), 500);
+            }
+        }
+
+        function crearPuntosDeNivel() {
+            const container = document.getElementById('level-dots');
+            container.innerHTML = '';
+            for(let i=0; i<niveles.length; i++) {
+                const dot = document.createElement('div');
+                dot.className = `w-3 h-3 rounded-full transition-colors duration-300 ${i <= estado.nivelActual ? 'bg-teal-500 shadow-[0_0_8px_rgba(20,184,166,0.8)]' : 'bg-slate-300'}`;
+                container.appendChild(dot);
+            }
+        }
+
+        function cambiarPantalla(pantallaActiva) {
+            Object.values(pantallas).forEach(p => p.classList.add('hidden'));
+            pantallaActiva.classList.remove('hidden');
+            if(pantallaActiva === pantallas.juego || pantallaActiva === pantallas.resultados) {
+                hud.classList.remove('hidden');
+            } else {
+                hud.classList.add('hidden');
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function startGame() {
+            estado = { nivelActual: 0, puntuacion: 0, etica: 50, responsabilidad: 50, seguridad: 50, maxPuntuacion: 100 };
+            actualizarBarras(false);
+            cambiarPantalla(pantallas.juego);
+            cargarNivel();
+        }
+
+        function cargarNivel() {
+            crearPuntosDeNivel();
+            document.getElementById('quote-container').textContent = frasesMotivadoras[Math.floor(Math.random() * frasesMotivadoras.length)];
+            
+            const nivel = niveles[estado.nivelActual];
+            document.getElementById('level-badge').textContent = `NIVEL ${estado.nivelActual + 1} DE ${niveles.length}`;
+            document.getElementById('level-title').textContent = nivel.titulo;
+            document.getElementById('level-story').textContent = nivel.historia;
+
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+
+            const opcionesBarajadas = [...nivel.opciones].sort(() => Math.random() - 0.5);
+
+            opcionesBarajadas.forEach((opcion, index) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left bg-white p-5 rounded-2xl shadow-sm border-2 border-slate-100 hover:border-teal-400 hover:shadow-md transition-all transform hover:-translate-y-1 group";
+                btn.innerHTML = `
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-8 h-8 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center font-bold group-hover:bg-teal-100 group-hover:text-teal-600 transition-colors">
+                            ${String.fromCharCode(65 + index)}
+                        </div>
+                        <p class="text-slate-700 font-medium leading-relaxed group-hover:text-slate-900 pr-4">${opcion.texto}</p>
+                    </div>
+                `;
+                btn.onclick = (e) => seleccionarOpcion(opcion, e);
+                container.appendChild(btn);
+            });
+        }
+
+        function mostrarPuntosFlotantes(x, y, pts, esPositivo) {
+            const el = document.createElement('div');
+            el.className = `floating-point ${esPositivo ? 'text-green-500' : 'text-rose-500'}`;
+            el.textContent = `${esPositivo ? '+' : ''}${pts}`;
+            el.style.left = `${x}px`;
+            el.style.top = `${y}px`;
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 1500);
+        }
+
+        function generarPildorasStats(stats, containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            const createBadge = (val, icon) => {
+                if(val === 0) return '';
+                const isPos = val > 0;
+                const color = isPos ? 'bg-green-100 text-green-700 border-green-200' : 'bg-rose-100 text-rose-700 border-rose-200';
+                return `<div class="px-3 py-1 rounded-full text-sm font-bold border ${color} flex items-center gap-1 shadow-sm">${icon} ${isPos?'+':''}${val}</div>`;
+            };
+            container.innerHTML = [createBadge(stats.pts, '⭐'), createBadge(stats.etica, '⚖️'), createBadge(stats.resp, '🛡️'), createBadge(stats.seg, '❤️')].join('');
+        }
+
+        function seleccionarOpcion(opcion, event) {
+            estado.puntuacion = Math.max(0, Math.min(estado.maxPuntuacion, estado.puntuacion + opcion.pts));
+            estado.etica += opcion.etica;
+            estado.responsabilidad += opcion.resp;
+            estado.seguridad += opcion.seg;
+            
+            const rect = event.currentTarget.getBoundingClientRect();
+            mostrarPuntosFlotantes(rect.right - 50, rect.top + 20, opcion.pts, opcion.pts >= 0);
+            actualizarBarras();
+
+            let icon, titleColor, titleText;
+            if(opcion.tipo === 'bueno') { icon = '🌟'; titleColor = 'text-green-500'; titleText = '¡Buena Decisión!'; }
+            else if(opcion.tipo === 'malo') { icon = '⚠️'; titleColor = 'text-rose-500'; titleText = 'Decisión Riesgosa'; }
+            else { icon = '🤔'; titleColor = 'text-amber-500'; titleText = 'Decisión Cuestionable'; }
+
+            document.getElementById('feedback-icon').textContent = icon;
+            const titleEl = document.getElementById('feedback-title');
+            titleEl.textContent = titleText;
+            titleEl.className = `text-2xl font-black mb-2 ${titleColor}`;
+            document.getElementById('feedback-text').textContent = opcion.feedback;
+            
+            generarPildorasStats(opcion, 'feedback-stats');
+
+            // Si la respuesta es correcta, al cerrar el feedback se mostrará su video.
+            videoPendiente = (opcion.tipo === 'bueno');
+
+            modalFeedback.classList.remove('hidden');
+        }
+
+        function trySorpresa() {
+            if (estado.nivelActual > 0 && estado.nivelActual < 5 && Math.random() < 0.3) {
+                const sorpresa = tarjetasSorpresa[Math.floor(Math.random() * tarjetasSorpresa.length)];
+                estado.puntuacion = Math.max(0, Math.min(estado.maxPuntuacion, estado.puntuacion + sorpresa.pts));
+                estado.etica += sorpresa.etica;
+                estado.responsabilidad += sorpresa.resp;
+                estado.seguridad += sorpresa.seg;
+                
+                document.getElementById('surprise-title').textContent = sorpresa.titulo;
+                document.getElementById('surprise-text').textContent = sorpresa.texto;
+                generarPildorasStats(sorpresa, 'surprise-stats');
+                modalSurprise.classList.remove('hidden');
+                actualizarBarras();
+                return true;
+            }
+            return false;
+        }
+
+        function nextStep() {
+            modalFeedback.classList.add('hidden');
+
+            // Solo mostramos video cuando la respuesta elegida fue la correcta.
+            if (videoPendiente) {
+                videoPendiente = false;
+                mostrarVideo(estado.nivelActual);
+                return;
+            }
+
+            if(!trySorpresa()) avanzarNivel();
+        }
+
+        function mostrarVideo(indiceNivel) {
+            const videoSrc = videosPorNivel[indiceNivel];
+
+            videoTitle.textContent = `🎬 Video — Nivel ${indiceNivel + 1}`;
+            levelVideo.pause();
+            levelVideo.currentTime = 0;
+            levelVideo.src = videoSrc;
+            levelVideo.load();
+
+            videoContinueBtn.classList.add('hidden');
+            videoHint.textContent = 'Reproduce el video para continuar.';
+
+            modalVideo.classList.remove('hidden');
+
+            // Intentamos iniciar automáticamente; el navegador puede bloquearlo
+            // si requiere una interacción del usuario.
+            levelVideo.play().catch(() => {});
+
+            levelVideo.onended = () => {
+                videoContinueBtn.classList.remove('hidden');
+                videoHint.textContent = '¡Video terminado! Pulsa CONTINUAR para seguir.';
+            };
+        }
+
+        function cerrarVideo() {
+            levelVideo.pause();
+            levelVideo.removeAttribute('src');
+            levelVideo.load();
+            modalVideo.classList.add('hidden');
+
+            if (!videoPendiente) {
+                if(!trySorpresa()) avanzarNivel();
+            }
+        }
+
+        function closeSurprise() {
+            modalSurprise.classList.add('hidden');
+            avanzarNivel();
+        }
+
+        function avanzarNivel() {
+            estado.nivelActual++;
+            if (estado.nivelActual < niveles.length) cargarNivel();
+            else mostrarResultados();
+        }
+
+        function getEstadoEval(val) {
+            if (val >= 80) return { tex: "Excelente", col: "text-green-600" };
+            if (val >= 50) return { tex: "Aceptable", col: "text-amber-500" };
+            return { tex: "En Riesgo Crítico", col: "text-rose-600" };
+        }
+
+        function mostrarResultados() {
+            cambiarPantalla(pantallas.resultados);
+            document.getElementById('result-score').textContent = `${estado.puntuacion}/100`;
+            const titleEl = document.getElementById('result-classification');
+            const iconEl = document.getElementById('result-icon');
+
+            if (estado.puntuacion >= 90) {
+                titleEl.textContent = "GUARDIÁN DE LA PROFESIÓN FARMACÉUTICA";
+                titleEl.className = "text-3xl md:text-5xl font-black text-center mb-2 text-teal-600";
+                iconEl.textContent = "🏅";
+            } else if (estado.puntuacion >= 70) {
+                titleEl.textContent = "Profesional Responsable";
+                titleEl.className = "text-3xl md:text-5xl font-black text-center mb-2 text-blue-600";
+                iconEl.textContent = "✅";
+            } else {
+                titleEl.textContent = "Profesión en riesgo";
+                titleEl.className = "text-3xl md:text-5xl font-black text-center mb-2 text-rose-600";
+                iconEl.textContent = "🚨";
+            }
+
+            document.getElementById('res-est').innerHTML = `Estado operativo y legal: <br><span class="${getEstadoEval(estado.responsabilidad).col} font-black text-base">${getEstadoEval(estado.responsabilidad).tex}</span>`;
+            document.getElementById('res-pac').innerHTML = `Garantía de salud pública: <br><span class="${getEstadoEval(estado.seguridad).col} font-black text-base">${getEstadoEval(estado.seguridad).tex}</span>`;
+            document.getElementById('res-prof').innerHTML = `Integridad y ética: <br><span class="${getEstadoEval(estado.etica).col} font-black text-base">${getEstadoEval(estado.etica).tex}</span>`;
+        }
+
+        function resetGame() {
+            videoPendiente = false;
+            levelVideo.pause();
+            levelVideo.removeAttribute('src');
+            levelVideo.load();
+            modalVideo.classList.add('hidden');
+            modalFeedback.classList.add('hidden');
+            modalSurprise.classList.add('hidden');
+            cambiarPantalla(pantallas.inicio);
+        }
+        function shareScore() {
+            alert(`¡Obtuve ${estado.puntuacion}/100 puntos en el reto del Químico Farmacéutico! Yo elegí ejercer, no solo figurar.`);
+        }
+    </script>
+</body>
+</html>
